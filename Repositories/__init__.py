@@ -1,0 +1,2 @@
+from .ExtratoRepository import ExtratoRepository
+from .CategoriaRepository import CategoriaRepository

@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+
+# Configurações e variáveis sensíveis
+.env
+
+# Arquivos temporários e relatórios gerados
+relatorios/*.xlsx
+relatorios/*.csv
+!relatorios/.gitkeep
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
