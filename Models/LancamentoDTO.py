@@ -17,3 +17,4 @@ class LancamentoDTO:
     categoria_cor: str = '#808080'
     categoria_icone: str = '🏷️'
     arquivo_origem: Optional[str] = None
+    observacao: Optional[str] = None

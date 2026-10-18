@@ -212,13 +212,15 @@ st.markdown(
 # Cálculos de Métricas
 receitas_df = df_filtrado[df_filtrado['tipo'] == 'RECEITA']
 despesas_df = df_filtrado[df_filtrado['tipo'] == 'DESPESA']
+investimentos_df = df_filtrado[df_filtrado['categoria'] == 'Investimentos']
 
 total_receitas = float(receitas_df['valor'].sum()) if not receitas_df.empty else 0.0
 total_despesas = float(despesas_df['valor_abs'].sum()) if not despesas_df.empty else 0.0
+total_investimentos = float(investimentos_df['valor_abs'].sum()) if not investimentos_df.empty else 0.0
 saldo_liquido = total_receitas - total_despesas
 taxa_poupanca = (saldo_liquido / total_receitas * 100.0) if total_receitas > 0 else 0.0
 
-col1, col2, col3, col4, col5 = st.columns(5)
+col1, col2, col3, col4, col5, col6 = st.columns(6)
 
 with col1:
     st.markdown(f"""
@@ -239,6 +241,15 @@ with col2:
     """, unsafe_allow_html=True)
 
 with col3:
+    st.markdown(f"""
+    <div class="metric-card">
+        <div class="metric-title">📈 Aportes Investimentos</div>
+        <div class="metric-value neutral-val">{Formatter.moeda(total_investimentos)}</div>
+        <div class="metric-sub">{len(investimentos_df)} aportes (Clear/Nomad)</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col4:
     saldo_class = "positive-val" if saldo_liquido >= 0 else "negative-val"
     sinal = "+" if saldo_liquido > 0 else ""
     st.markdown(f"""
@@ -249,17 +260,17 @@ with col3:
     </div>
     """, unsafe_allow_html=True)
 
-with col4:
+with col5:
     poup_class = "positive-val" if taxa_poupanca >= 0 else "negative-val"
     st.markdown(f"""
     <div class="metric-card">
-        <div class="metric-title">📈 Taxa de Poupança</div>
+        <div class="metric-title">📊 Taxa de Poupança</div>
         <div class="metric-value {poup_class}">{Formatter.percentual(taxa_poupanca)}</div>
         <div class="metric-sub">Proporção economizada</div>
     </div>
     """, unsafe_allow_html=True)
 
-with col5:
+with col6:
     st.markdown(f"""
     <div class="metric-card">
         <div class="metric-title">🔢 Total Transações</div>
@@ -572,7 +583,7 @@ with tab_extrato:
     with col_f1:
         busca_texto = st.text_input("🔍 Buscar na descrição da transação:", placeholder="Ex: Pix, Assai, Mercado...")
     with col_f2:
-        tipo_filtro = st.selectbox("Tipo:", options=["Todos", "RECEITA", "DESPESA"])
+        tipo_filtro = st.selectbox("Tipo:", options=["Todos", "RECEITA", "DESPESA", "TRANSFERENCIA"])
     with col_f3:
         cat_filtro = st.selectbox("Categoria:", options=["Todas"] + lista_categorias)
 
@@ -587,16 +598,27 @@ with tab_extrato:
 
     st.write(f"Mostrando **{len(df_busca)}** registros encontrados:")
 
-    df_tabela_view = df_busca[['data', 'banco', 'descricao', 'categoria', 'tipo', 'valor']].copy()
+    colunas_exibir = ['data', 'banco', 'descricao', 'categoria', 'tipo', 'valor']
+    if 'observacao' in df_busca.columns:
+        colunas_exibir.append('observacao')
+
+    df_tabela_view = df_busca[colunas_exibir].copy()
     df_tabela_view = df_tabela_view.sort_values(by='data', ascending=False)
     df_tabela_view['Data'] = df_tabela_view['data'].apply(Formatter.data)
     df_tabela_view['Valor (R$)'] = df_tabela_view['valor'].apply(Formatter.moeda)
-    df_tabela_view = df_tabela_view[['Data', 'banco', 'descricao', 'categoria', 'tipo', 'Valor (R$)']].rename(columns={
+
+    nomes_colunas = {
         'banco': 'Banco',
         'descricao': 'Descrição',
         'categoria': 'Categoria',
-        'tipo': 'Tipo'
-    })
+        'tipo': 'Tipo',
+        'observacao': 'Observação / Conciliação'
+    }
+    colunas_finais = ['Data', 'banco', 'descricao', 'categoria', 'tipo', 'Valor (R$)']
+    if 'observacao' in df_tabela_view.columns:
+        colunas_finais.append('observacao')
+
+    df_tabela_view = df_tabela_view[colunas_finais].rename(columns=nomes_colunas)
 
     st.dataframe(df_tabela_view, hide_index=True, use_container_width=True, height=450)
 
