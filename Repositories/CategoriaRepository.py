@@ -34,6 +34,16 @@ class CategoriaRepository:
         )
         return {r[0]: r[1] for r in resultados}
 
+    def get_mapa_lancamentos(self) -> Dict[str, LancamentoCategorizado]:
+        """Retorna dicionário {hash_transacao: LancamentoCategorizado} com Categoria carregada."""
+        from sqlalchemy.orm import joinedload
+        registros = (
+            self.session.query(LancamentoCategorizado)
+            .options(joinedload(LancamentoCategorizado.categoria))
+            .all()
+        )
+        return {r.hash_transacao: r for r in registros}
+
     def limpar_categorizacoes_automaticas(self):
         """Remove classificações que não foram manuais para permitir reclassificação total."""
         self.session.query(LancamentoCategorizado).filter(LancamentoCategorizado.manual.is_(False)).delete()
@@ -96,6 +106,8 @@ class CategoriaRepository:
             ("Serviços & Assinaturas", "Streaming, software, assinaturas e planos de telefonia", "#1ABC9C", "💻", "DESPESA"),
             ("Saúde & Farmácia", "Farmácias, remédios, planos de saúde e consultas", "#E84393", "💊", "DESPESA"),
             ("Lazer & Viagens", "Cinemas, hotéis, viagens e passeios", "#00CEC9", "✈️", "DESPESA"),
+            ("Investimentos", "Aportes e transferências para corretoras e contas de investimentos (Clear Corretora, Nomad, etc.)", "#16A085", "📈", "DESPESA"),
+            ("Transferência entre Contas", "Transferências entre contas bancárias da mesma titularidade (Itaú <-> Mercado Pago)", "#95A5A6", "🔄", "TRANSFERENCIA"),
             ("Outros / Diversos", "Gastos gerais não classificados em outras categorias", "#7F8C8D", "🏷️", "DESPESA"),
         ]
 
@@ -115,6 +127,10 @@ class CategoriaRepository:
             cat_objs[nome] = cat
 
         regras_base = [
+            # Investimentos
+            ("Investimentos", "NOMAD", "contem", 45),
+            ("Investimentos", "CLEAR", "contem", 45),
+
             # Rendimentos
             ("Rendimentos & Investimentos", "Rendimento", "contem", 50),
             ("Rendimentos & Investimentos", "CDB", "contem", 50),
@@ -125,6 +141,7 @@ class CategoriaRepository:
             ("Transferências & Pix Recebidos", "Pix recebido", "contem", 45),
             ("Transferências & Pix Recebidos", "TED recebida", "contem", 45),
             ("Transferências & Pix Recebidos", "DOC recebido", "contem", 45),
+            ("Transferências & Pix Recebidos", "TED 001.4260", "contem", 45),
 
             # Cartão de Crédito
             ("Cartão de Crédito", "FATURA PAGA", "contem", 45),

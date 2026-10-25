@@ -27,7 +27,7 @@ class ExtratoRepository:
         busca: Optional[str] = None
     ) -> List[LancamentoDTO]:
         """Busca e consolida lançamentos de todas as tabelas de extrato ativas."""
-        mapa_cat = self.cat_repo.get_mapa_categorizados()
+        mapa_lanc = self.cat_repo.get_mapa_lancamentos()
         lancamentos: List[LancamentoDTO] = []
 
         bancos_norm = [b.lower() for b in bancos] if bancos else None
@@ -44,15 +44,21 @@ class ExtratoRepository:
 
             for row in q_itau.order_by(ExtratoItau.data_lancamento.desc()).all():
                 val = float(row.valor) if row.valor is not None else 0.0
-                tipo_transacao = "RECEITA" if val >= 0 else "DESPESA"
 
-                if tipo and tipo.upper() != tipo_transacao:
-                    continue
-
-                cat_obj = mapa_cat.get(row.hash_transacao)
+                lanc_cat = mapa_lanc.get(row.hash_transacao)
+                cat_obj = lanc_cat.categoria if lanc_cat else None
                 cat_nome = cat_obj.nome if cat_obj else "Não categorizado"
                 cat_cor = cat_obj.cor_hex if cat_obj else "#808080"
                 cat_icone = cat_obj.icone if cat_obj else "🏷️"
+                obs = lanc_cat.observacao if lanc_cat else None
+
+                if cat_obj and cat_obj.tipo_padrao == "TRANSFERENCIA":
+                    tipo_transacao = "TRANSFERENCIA"
+                else:
+                    tipo_transacao = "RECEITA" if val >= 0 else "DESPESA"
+
+                if tipo and tipo.upper() != tipo_transacao:
+                    continue
 
                 lancamentos.append(LancamentoDTO(
                     id=row.id,
@@ -67,7 +73,8 @@ class ExtratoRepository:
                     categoria=cat_nome,
                     categoria_cor=cat_cor,
                     categoria_icone=cat_icone,
-                    arquivo_origem=row.arquivo_origem
+                    arquivo_origem=row.arquivo_origem,
+                    observacao=obs
                 ))
 
         # 2. Extrato Mercado Pago
@@ -82,15 +89,21 @@ class ExtratoRepository:
 
             for row in q_mp.order_by(ExtratoMercadoPago.data_lancamento.desc()).all():
                 val = float(row.valor) if row.valor is not None else 0.0
-                tipo_transacao = "RECEITA" if val >= 0 else "DESPESA"
 
-                if tipo and tipo.upper() != tipo_transacao:
-                    continue
-
-                cat_obj = mapa_cat.get(row.hash_transacao)
+                lanc_cat = mapa_lanc.get(row.hash_transacao)
+                cat_obj = lanc_cat.categoria if lanc_cat else None
                 cat_nome = cat_obj.nome if cat_obj else "Não categorizado"
                 cat_cor = cat_obj.cor_hex if cat_obj else "#808080"
                 cat_icone = cat_obj.icone if cat_obj else "🏷️"
+                obs = lanc_cat.observacao if lanc_cat else None
+
+                if cat_obj and cat_obj.tipo_padrao == "TRANSFERENCIA":
+                    tipo_transacao = "TRANSFERENCIA"
+                else:
+                    tipo_transacao = "RECEITA" if val >= 0 else "DESPESA"
+
+                if tipo and tipo.upper() != tipo_transacao:
+                    continue
 
                 lancamentos.append(LancamentoDTO(
                     id=row.id,
@@ -105,7 +118,8 @@ class ExtratoRepository:
                     categoria=cat_nome,
                     categoria_cor=cat_cor,
                     categoria_icone=cat_icone,
-                    arquivo_origem=row.arquivo_origem
+                    arquivo_origem=row.arquivo_origem,
+                    observacao=obs
                 ))
 
         # Ordena todos cronologicamente descrescente
@@ -119,7 +133,7 @@ class ExtratoRepository:
             return pd.DataFrame(columns=[
                 "id", "banco", "data", "ano", "mes", "ano_mes",
                 "descricao", "valor", "valor_abs", "tipo",
-                "saldo", "categoria", "hash_transacao"
+                "saldo", "categoria", "hash_transacao", "observacao"
             ])
 
         linhas = []
@@ -138,7 +152,8 @@ class ExtratoRepository:
                 "saldo": d.saldo,
                 "categoria": d.categoria,
                 "hash_transacao": d.hash_transacao,
-                "arquivo_origem": d.arquivo_origem
+                "arquivo_origem": d.arquivo_origem,
+                "observacao": d.observacao
             })
 
         df = pd.DataFrame(linhas)

@@ -44,7 +44,6 @@ analise-extrato-bancos/
 ├── main.py                         # Aplicação Principal: Dashboard Web Interativo (Streamlit)
 ├── requirements.txt                # Lista de dependências do projeto
 ├── .env.example                    # Modelo com as variáveis de ambiente necessárias
-└── .env                            # Configurações de credenciais e host do banco de dados (ignorado no git)
 ```
 
 ---
@@ -56,11 +55,12 @@ analise-extrato-bancos/
 - Normalização de tipos (`RECEITA` e `DESPESA`), valores absolutos e ordenação cronológica.
 - Conversão direta em `pandas.DataFrame` otimizado para análises de alto desempenho.
 
-### 2. Motor de Categorização Inteligente
-- **Classificação Automática**: Avalia a descrição de cada transação contra regras pré-definidas ordenadas por prioridade.
-- **Tipos de Casamento**: Suporte a padrões do tipo `contem`, `regex`, `comeca_com` (`starts_with`) e correspondência exata (`equals`).
-- **Categorias Nativas**: Rendimentos & Investimentos, Transferências & Pix Recebidos, Transferências & Pix Enviados, Cartão de Crédito, Alimentação & Supermercado, Moradia & Contas, Compras & Eletrônicos, Transporte & Mobilidade, Serviços & Assinaturas, Saúde & Farmácia, Lazer & Viagens e Outros / Diversos.
-- **Precedência Manual**: Classificações realizadas manualmente pelo usuário no painel têm precedência permanente e não são sobrescritas em reprocessamentos automáticos.
+### 2. Motor de Categorização Inteligente & Conciliação entre Bancos
+- **Conciliação Bidirecional (Itaú <-> Mercado Pago)**: Cruza datas e valores das transferências de mesma titularidade entre os bancos, classificando as duas pontas como `Transferência entre Contas` (tipo `TRANSFERENCIA`) para evitar a duplicação artificial de receitas e despesas operacionais.
+- **Identificação Automática de Investimentos (Clear Corretora & Nomad)**: Transferências para a mesma titularidade que não entraram no Mercado Pago são automaticamente identificadas e classificadas na categoria dedicada `Investimentos` (Aportes Clear Corretora ou Nomad).
+- **Classificação Automática por Regras**: Avalia a descrição de cada transação contra regras pré-definidas ordenadas por prioridade (`contem`, `regex`, `comeca_com`, `equals`).
+- **Categorias Nativas**: Investimentos, Transferência entre Contas, Rendimentos & Investimentos, Transferências & Pix Recebidos, Transferências & Pix Enviados, Cartão de Crédito, Alimentação & Supermercado, Moradia & Contas, Compras & Eletrônicos, Transporte & Mobilidade, Serviços & Assinaturas, Saúde & Farmácia, Lazer & Viagens e Outros / Diversos.
+- **Precedência Manual**: Classificações manuais têm precedência permanente e não são sobrescritas em reclassificações automáticas.
 
 ### 3. Painel Web Moderno (Streamlit + Plotly)
 - **KPI Cards em Tempo Real**: Receitas Totais, Despesas Totais, Saldo Líquido, Taxa de Poupança (%) e Contagem de Operações.
