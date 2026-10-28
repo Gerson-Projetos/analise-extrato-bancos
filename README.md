@@ -2,7 +2,7 @@
 
 Sistema em **Python**, **Streamlit**, **Plotly**, **Pandas** e **SQLAlchemy** para consolidação analítica, categorização inteligente e visualização financeira de extratos bancários unificados (**Itaú** e **Mercado Pago**).
 
-O projeto é conectado diretamente à base de dados PostgreSQL populada pelo pipeline de extração (`etl-bancos-extratos`), organizando as informações em uma arquitetura orientada a serviços (**SOA**) e apresentando um painel interativo moderno para acompanhamento de despesas, receitas, fluxo de caixa e taxa de poupança.
+O projeto é conectado diretamente à base de dados PostgreSQL populada pelo pipeline de extração (`etl-bancos-extratos`), organizando as informações em uma arquitetura orientada a serviços (**SOA**) e apresentando um painel interativo moderno para acompanhamento anual de receitas, gastos e saldo, além da evolução diária das despesas de cada mês.
 
 ---
 
@@ -63,34 +63,30 @@ analise-extrato-bancos/
 - **Precedência Manual**: Classificações manuais têm precedência permanente e não são sobrescritas em reclassificações automáticas.
 
 ### 3. Painel Web Moderno (Streamlit + Plotly)
-- **KPI Cards em Tempo Real**: Receitas Totais, Despesas Totais, Saldo Líquido, Taxa de Poupança (%) e Contagem de Operações.
-- **Filtros Dinâmicos**: Filtro multi-seleção de bancos e intervalo customizável de datas (date picker).
+- **Paleta Visual Unificada**: Verde para receitas, coral para gastos e azul-marinho para saldo, compartilhada entre cartões e gráficos.
+- **Filtros Globais na Barra Lateral**:
+  - Multi-seleção de **Instituições Bancárias**.
+  - Seleção do **Ano** analisado na Visão Geral (padrão: ano mais recente).
 - **Ações Rápidas na Barra Lateral**:
   - `🔄 Classificar`: Processa apenas lançamentos novos/pendentes de categoria.
   - `⚠️ Reclassificar`: Reprocessa todas as transações aplicando as regras ativas mais recentes (preservando manuais).
-  - `📥 Baixar Relatório Excel (.xlsx)`: Gera e faz download imediato da planilha multi-abas consolidada.
+  - `📥 Baixar Relatório {ano} (.xlsx)`: Gera em memória e baixa a planilha multi-abas do ano selecionado.
+- **Cache de Dados**: Lançamentos em cache por 5 minutos (`st.cache_data`), invalidado automaticamente após classificações.
 
-### 4. Abas Analíticas do Dashboard
-1. **📊 Visão Geral**:
-   - Gráfico mensal de fluxo (barras emparelhadas de Receitas e Despesas + linha de Saldo Líquido).
-   - Gráfico de rosca (*Donut Chart*) com a distribuição percentual das despesas por categoria.
-2. **🏷️ Gastos por Categoria**:
-   - Ranking visual em gráfico de barras horizontais com cores personalizadas por categoria.
-   - Tabela analítica com Total (R$), Quantidade de transações, Ticket Médio e % sobre despesas.
-   - Ferramenta de **Drill-down**: Inspecione todas as transações individuais de qualquer categoria selecionada.
-3. **📅 Fluxo & Evolução Temporal**:
-   - Curva acumulada de fluxo de caixa e poupança ao longo dos meses.
-   - Tabela comparativa mês a mês com taxa de poupança calculada.
-4. **🔝 Maiores Gastos**:
-   - Slider interativo para selecionar o ranking desejado (Top 5 a Top 50).
-   - Visualização gráfica e tabela detalhada das maiores despesas do período.
-5. **📑 Extrato Completo & Busca**:
-   - Busca textual instantânea na descrição com filtros combinados por tipo (`RECEITA`/`DESPESA`) e categoria.
-   - Tabela paginada com ordenação cronológica.
-   - Botão para exportação direta do resultado filtrado para **CSV**.
-6. **⚙️ Reclassificação Manual**:
-   - Seleção interativa de qualquer transação registrada com resumo de data, banco, valor e descrição.
-   - Atribuição de nova categoria e campo opcional de observação com salvamento direto no PostgreSQL.
+### 4. Abas do Dashboard
+1. **📊 Visão Geral (métricas anuais)**:
+   - **Cartões de KPI**: Receitas, Gastos e Saldo Total do ano, cada um com a **Média Mensal** (calculada apenas sobre os meses com movimentação, evitando distorção em anos parciais).
+   - **Grid de gráficos**:
+     - *Receitas x Gastos*: barras agrupadas por mês (Jan–Dez).
+     - *Saldo Mensal*: barras do saldo de cada mês com linha de referência no zero.
+     - *Gastos por Categoria*: ranking em barras horizontais com valor total e quantidade de lançamentos no hover.
+2. **📅 Gastos por Dia**:
+   - Filtro próprio de **Ano** e **Mês** (padrão: mês mais recente com dados).
+   - **Mini-cards**: Total gasto no mês, Média diária, Dias com gasto e Dia de maior gasto.
+   - **Gráfico de evolução diária**: barras de gasto por dia (incluindo dias sem gasto), linha de **acumulado no mês** (eixo secundário) e linha tracejada da média diária.
+   - **Detalhamento das despesas**: busca textual na descrição e filtro multi-seleção de categorias, com total dos registros filtrados.
+   - Exportação das despesas filtradas do mês para **CSV**.
+   - **⚙️ Reclassificação manual** (expansível): seleciona um lançamento do mês, atribui nova categoria e observação opcional, salvando direto no PostgreSQL.
 
 ---
 
@@ -158,16 +154,14 @@ O Streamlit iniciará o servidor local e abrirá automaticamente no navegador no
 O sistema oferece duas modalidades de exportação de dados:
 
 1. **Planilha Excel (.xlsx) Multi-Abas**:
-   - Pode ser baixada diretamente pela barra lateral do Dashboard.
+   - Baixada pela barra lateral, considerando o **ano** e os **bancos** selecionados.
    - Abas incluídas:
-     - `Resumo`: Indicadores gerais (Receitas, Despesas, Saldo Líquido, Poupança).
-     - `Categorias`: Tabela agregada por categoria.
-     - `Evolução Mensal`: Comparativo mês a mês.
-     - `Maiores Gastos`: As 50 maiores saídas financeiras.
-     - `Por Banco`: Volume e distribuição por instituição financeira.
-     - `Extrato Filtrado`: Base de lançamentos conforme os filtros selecionados.
+     - `Resumo`: Ano, bancos, Total de Receitas, Total de Gastos, Saldo Total e meses com movimentação.
+     - `Mensal`: Receitas, Gastos e Saldo de Jan a Dez.
+     - `Categorias`: Total e quantidade de lançamentos de despesa por categoria.
+     - `Extrato`: Todos os lançamentos do ano filtrado.
 2. **Exportação CSV**:
-   - Disponível na aba **Extrato Completo & Busca** para download instantâneo dos registros filtrados.
+   - Disponível na aba **Gastos por Dia** com as despesas do mês conforme busca/categorias aplicadas (separador `;`, codificação UTF-8 com BOM para abrir corretamente no Excel).
 
 ---
 
