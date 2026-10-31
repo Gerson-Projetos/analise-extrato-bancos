@@ -149,6 +149,45 @@ O Streamlit iniciará o servidor local e abrirá automaticamente no navegador no
 
 ---
 
+## 🐳 Execução via Docker
+
+O projeto possui duas configurações prontas para Docker Compose:
+
+### Cenário A: Conectar em Banco Separado / Existente
+Utilize quando o PostgreSQL já estiver rodando em outro servidor, container separado ou no próprio host (`192.168.x.x` ou `host.docker.internal`).
+
+1. Configure seu `.env` com os dados do banco externo (exemplo no [.env.docker.example](file:///d:/projetos-local/analise-extrato-bancos/.env.docker.example)).
+2. Inicie o container da aplicação:
+```powershell
+docker compose up -d --build
+```
+3. Acesse o painel em **`http://localhost:8501`**.
+
+Para parar o container:
+```powershell
+docker compose down
+```
+
+---
+
+### Cenário B: Criando o Container com o Banco Necessário
+Utilize quando desejar subir tanto o **PostgreSQL** quanto a **aplicação** de forma totalmente isolada e automática.
+
+1. Inicie a stack completa:
+```powershell
+docker compose -f docker-compose.with-db.yml up -d --build
+```
+> O container do PostgreSQL inicializa automaticamente o schema `financeiro` e define persistência em volume Docker (`analise_extrato_postgres_data`). A porta `5432` fica exposta para conexões externas (DBeaver, scripts ETL, etc.).
+
+2. Acesse o painel em **`http://localhost:8501`**.
+
+Para parar os containers mantendo os dados salvos:
+```powershell
+docker compose -f docker-compose.with-db.yml down
+```
+
+---
+
 ## 📦 Exportação de Relatórios
 
 O sistema oferece duas modalidades de exportação de dados:

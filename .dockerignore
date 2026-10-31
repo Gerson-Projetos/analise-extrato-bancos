@@ -1,0 +1,23 @@
+# Python
+venv/
+.venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Git e Documentação
+.git/
+.gitignore
+
+# Configurações locais sensíveis
+.env
+
+# IDEs
+.vscode/
+.idea/
+
+# Relatórios gerados
+relatorios/*.xlsx
+relatorios/*.csv
+!relatorios/.gitkeep
