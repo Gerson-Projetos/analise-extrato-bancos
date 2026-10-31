@@ -1,0 +1,55 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: analise-extrato-db
+    restart: unless-stopped
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-sistemas}
+      POSTGRES_USER: ${DB_USERNAME:-local}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/init-db/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-local} -d ${DB_DATABASE:-sistemas}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - analise-network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: analise-extrato-app
+    restart: unless-stopped
+    ports:
+      - "8501:8501"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_DATABASE=${DB_DATABASE:-sistemas}
+      - DB_USERNAME=${DB_USERNAME:-local}
+      - DB_PASSWORD=${DB_PASSWORD:-postgres}
+      - DB_SCHEMA=${DB_SCHEMA:-financeiro}
+    volumes:
+      - ./relatorios:/app/relatorios
+    networks:
+      - analise-network
+
+volumes:
+  postgres_data:
+    name: analise_extrato_postgres_data
+
+networks:
+  analise-network:
+    name: analise-extrato-network
